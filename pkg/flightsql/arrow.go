@@ -165,6 +165,16 @@ func newDataField[T any](f arrow.Field) *data.Field {
 	return data.NewField(f.Name, nil, s)
 }
 
+
+func getTimeUnit(col arrow.Array) arrow.TimeUnit {
+	switch t := col.DataType().(type) {
+		case *arrow.TimestampType:
+			return t.TimeUnit()
+		default:
+			return arrow.Nanosecond
+	}
+}
+
 // copyData copies the contents of an Arrow column into a Data Frame field.
 func copyData(field *data.Field, col arrow.Array) error {
 	defer func() {
@@ -178,6 +188,7 @@ func copyData(field *data.Field, col arrow.Array) error {
 	switch col.DataType().ID() {
 	case arrow.TIMESTAMP:
 		v := array.NewTimestampData(data)
+		unit := getTimeUnit(col)
 		for i := 0; i < v.Len(); i++ {
 			if field.Nullable() {
 				if v.IsNull(i) {
@@ -185,11 +196,11 @@ func copyData(field *data.Field, col arrow.Array) error {
 					field.Append(t)
 					continue
 				}
-				t := v.Value(i).ToTime(arrow.Nanosecond)
+				t := v.Value(i).ToTime(unit)
 				field.Append(&t)
 				continue
 			}
-			field.Append(v.Value(i).ToTime(arrow.Nanosecond))
+			field.Append(v.Value(i).ToTime(unit))
 		}
 	case arrow.DENSE_UNION:
 		v := array.NewDenseUnionData(data)
