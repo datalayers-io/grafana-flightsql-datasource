@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"runtime/debug"
+	"strings"
 	"sync"
 	"time"
 
@@ -102,6 +103,9 @@ type queryRequest struct {
 
 // query executes a SQL statement by issuing a `CommandStatementQuery` command to Flight SQL.
 func (d *FlightSQLDatasource) query(ctx context.Context, query sqlutil.Query) (resp backend.DataResponse) {
+	if strings.TrimSpace(query.RawSQL) == "" {
+		return backend.ErrDataResponse(backend.StatusInternal, fmt.Sprintf("query is empty"))
+	}
 	defer func() {
 		if r := recover(); r != nil {
 			logErrorf("Panic: %s %s", r, string(debug.Stack()))
@@ -115,7 +119,7 @@ func (d *FlightSQLDatasource) query(ctx context.Context, query sqlutil.Query) (r
 
 	info, err := d.client.Execute(ctx, query.RawSQL)
 	if err != nil {
-		return backend.ErrDataResponse(backend.StatusInternal, fmt.Sprintf("flightsql: %s", err))
+		return backend.ErrDataResponse(backend.StatusInternal, fmt.Sprintf("flightsql excute error : %s, query: %s", err, query.RawSQL))
 	}
 	if len(info.Endpoint) != 1 {
 		return backend.ErrDataResponse(backend.StatusInternal, fmt.Sprintf("unsupported endpoint count in response: %d", len(info.Endpoint)))

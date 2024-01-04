@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"runtime/debug"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -54,12 +56,12 @@ type FlightSQLDatasource struct {
 	client          *client
 	resourceHandler backend.CallResourceHandler
 	md              metadata.MD
+	cfg             config
 }
 
 // NewDatasource creates a new datasource instance.
 func NewDatasource(ctx context.Context, settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
 	var cfg config
-
 	err := json.Unmarshal(settings.JSONData, &cfg)
 	if err != nil {
 		return nil, fmt.Errorf("config: %s", err)
@@ -110,6 +112,7 @@ func NewDatasource(ctx context.Context, settings backend.DataSourceInstanceSetti
 	ds := &FlightSQLDatasource{
 		client: client,
 		md:     md,
+		cfg:    cfg,
 	}
 	r := chi.NewRouter()
 	r.Use(recoverer)
@@ -123,7 +126,59 @@ func NewDatasource(ctx context.Context, settings backend.DataSourceInstanceSetti
 	})
 	ds.resourceHandler = httpadapter.New(r)
 
+	go func(d *FlightSQLDatasource) {
+		interval := 10 * time.Second
+		timer := time.NewTicker(interval)
+
+		for {
+			select {
+			case <-timer.C:
+				ctx = metadata.NewOutgoingContext(context.TODO(), d.md)
+				_, err := d.client.Execute(ctx, "select 1")
+
+				logInfof("flightsql health check")
+				if err != nil {
+					logErrorf("flightsql health check failed : %s", err)
+					err = reconnect(context.TODO(), d)
+					if err != nil {
+						logErrorf("flightsql reconnect error : %s", err)
+					} else {
+						logInfof("flightsql reconnect success")
+					}
+				}
+			}
+		}
+	}(ds)
+
 	return ds, nil
+}
+
+var (
+	mutex sync.Mutex
+)
+
+func reconnect(ctx context.Context, ds *FlightSQLDatasource) error {
+	mutex.Lock()
+	defer mutex.Unlock()
+	ds.client = nil
+	client, err := newFlightSQLClient(ds.cfg)
+	if err != nil {
+		return fmt.Errorf("flightsql reconnection error : %s", err)
+	}
+	ds.client = client
+
+	if len(ds.cfg.Username) > 0 || len(ds.cfg.Password) > 0 {
+		ctx, err = client.FlightClient().AuthenticateBasicToken(ctx, ds.cfg.Username, ds.cfg.Password)
+
+		if err != nil {
+			return fmt.Errorf("flightsql: %s", err)
+		}
+		authMD, _ := metadata.FromOutgoingContext(ctx)
+		ds.md.Delete("authorization")
+		ds.md = metadata.Join(ds.md, authMD)
+	}
+
+	return nil
 }
 
 // Dispose cleans up before we are reaped.
