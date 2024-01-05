@@ -1,8 +1,8 @@
 {
   "$schema": "https://raw.githubusercontent.com/grafana/grafana/master/docs/sources/developers/plugins/plugin.schema.json",
   "type": "datasource",
-  "name": "FlightSQL",
-  "id": "influxdata-flightsql-datasource",
+  "name": "Datalayers-FlightSQL",
+  "id": "datalayers-flightsql-datasource",
   "metrics": true,
   "backend": true,
   "alerting": true,
@@ -10,8 +10,8 @@
   "info": {
     "description": "Query databases that support Flight SQL transport.",
     "author": {
-      "name": "InfluxData",
-      "url": "https://influxdata.com"
+      "name": "datalayers-io",
+      "url": "https://datalayers.io"
     },
     "keywords": ["datasource", "apache", "arrow", "flight", "flightsql"],
     "logos": {
@@ -21,15 +21,15 @@
     "links": [
       {
         "name": "Github",
-        "url": "https://github.com/influxdata/grafana-flightsql-datasource"
+        "url": "https://github.com/datalayers-io/grafana-flightsql-datasource"
       },
       {
         "name": "Docs",
-        "url": "https://github.com/influxdata/grafana-flightsql-datasource/blob/main/README.md#usage"
+        "url": "https://github.com/datalayers-io/grafana-flightsql-datasource/blob/main/README.md#usage"
       },
       {
         "name": "License",
-        "url": "https://github.com/influxdata/grafana-flightsql-datasource/blob/main/LICENSE"
+        "url": "https://github.com/datalayers-io/grafana-flightsql-datasource/blob/main/LICENSE"
       },
       {
         "name": "Arrow",
