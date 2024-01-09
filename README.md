@@ -2,6 +2,8 @@
 
 This is a plugin for Grafana that enables queries to Flight SQL APIs.
 
+> The repository is forked from [influxdata/grafana-flightsql-datasource](https://github.com/influxdata/grafana-flightsql-datasource), We're doing some testing, and we'll be releasing our own plugin code in the future. Thanks to the InfluxData team's works.
+
 ## Requirements
 
 The plugin requires the user to run Grafana >=9.2.5.

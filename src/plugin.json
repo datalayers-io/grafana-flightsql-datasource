@@ -1,14 +1,14 @@
 {
   "$schema": "https://raw.githubusercontent.com/grafana/grafana/master/docs/sources/developers/plugins/plugin.schema.json",
   "type": "datasource",
-  "name": "Datalayers-FlightSQL",
+  "name": "Datalayers",
   "id": "datalayers-flightsql-datasource",
   "metrics": true,
   "backend": true,
   "alerting": true,
   "executable": "gpx_flightsql_datasource",
   "info": {
-    "description": "Query databases that support Flight SQL transport.",
+    "description": "Grafana datasource for Datalayers.",
     "author": {
       "name": "datalayers-io",
       "url": "https://datalayers.io"
