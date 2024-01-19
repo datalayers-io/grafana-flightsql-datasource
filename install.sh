@@ -4,9 +4,54 @@ set -e
 # Make sure grafana cli is installed
 which grafana > /dev/null || (echo "Grafana has not been installed in the server, install it first."; exit 1)
 
+# Parse shell args
+while getopts h:u:p: opt
+do
+  case "${opt}" in
+    h) HOST=${OPTARG};;
+    u) USERNAME=${OPTARG};;
+    p) PASSWORD=${OPTARG};;
+  esac
+done
+
+echo $HOST;
+echo $USERNAME;
+echo $PASSWORD;
+
 # Make grafana custom.ini to current directory
-INI_CONTENT="[paths]\nplugins = $PWD/plugins\n[plugins]\nallow_loading_unsigned_plugins = datalayers"
-echo -e $INI_CONTENT > custom.ini
+tee custom.ini > /dev/null << EOF
+[paths]
+plugins = $PWD/plugins
+provisioning = $PWD/provisioning
+
+[plugins]
+allow_loading_unsigned_plugins = datalayers
+EOF
+echo "Generated custom.ini"
+
+# Make grafana provisioning file
+mkdir -p provisioning/datasources
+mkdir -p provisioning/dashboards
+mkdir -p provisioning/plugins
+mkdir -p provisioning/notifiers
+mkdir -p provisioning/alerting
+tee provisioning/datasources/datalayers.yaml > /dev/null << EOF
+apiVersion: 1
+datasources:
+  - name: Datalayers
+    type: datalayers
+    orgId: 1
+    url: http://$HOST
+    jsonData:
+      host: "$HOST"
+      selectedAuthType: "username/password"
+      username: "$USERNAME"
+    secureJsonData:
+      password: "$PASSWORD"
+    version: 1
+    editable: true
+EOF
+echo "Generated provisioning/datasources/datalayers.yaml"
 
 
 # Set repository information
